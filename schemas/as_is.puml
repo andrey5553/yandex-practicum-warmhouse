@@ -1,0 +1,15 @@
+@startuml
+!include <C4/C4_Context>
+
+System(monolith, "Умный дом", "Go-монолит, система управления отоплением")
+System_Ext(device, "Система отопления", "Оборудование и датчики температуры")
+Person(user, "Владелец дома", "Управляет отоплением и отслеживает температуру")
+Person(support, "Технический специалист", "Настраивает систему и оборудование")
+
+Rel(user, monolith, "Управляет отоплением", "HTTP/REST API")
+Rel(monolith, device, "Запрос температуры", "IoT Protocol")
+Rel(device, monolith, "Передает данные температуры", "IoT Protocol")
+Rel(support, monolith, "Настраивает датчики", "Admin Interface")
+Rel(support, device, "Устанавливает оборудование", "Physical setup")
+
+@enduml
