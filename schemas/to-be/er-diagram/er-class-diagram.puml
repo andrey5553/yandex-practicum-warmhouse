@@ -1,0 +1,111 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <b><color:red>+</color> x</b>
+!define foreign_key(x) <color:blue>+ x</color>
+
+hide methods
+hide stereotypes
+
+title ER-диаграмма - Умный дом (основные сущности)
+
+' === ОСНОВНЫЕ СУЩНОСТИ ===
+
+table(User) {
+  primary_key(id): BIGINT
+  email: VARCHAR(255)
+  password_hash: VARCHAR(255)
+  first_name: VARCHAR(100)
+  last_name: VARCHAR(100)
+  phone: VARCHAR(20)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(House) {
+  primary_key(id): BIGINT
+  foreign_key(owner_id): BIGINT
+  name: VARCHAR(255)
+  address: TEXT
+  latitude: DECIMAL(10,8)
+  longitude: DECIMAL(11,8)
+  timezone: VARCHAR(50)
+  created_at: TIMESTAMP
+}
+
+table(Room) {
+  primary_key(id): BIGINT
+  foreign_key(house_id): BIGINT
+  name: VARCHAR(255)
+  room_type: VARCHAR(50)
+  floor: INTEGER
+  area_sqm: DECIMAL(6,2)
+}
+
+table(DeviceType) {
+  primary_key(id): BIGINT
+  name: VARCHAR(255)
+  category: VARCHAR(100)
+  manufacturer: VARCHAR(255)
+  protocol_type: VARCHAR(50)
+  capabilities: JSON
+}
+
+table(Device) {
+  primary_key(id): BIGINT
+  foreign_key(device_type_id): BIGINT
+  foreign_key(room_id): BIGINT
+  serial_number: VARCHAR(255)
+  name: VARCHAR(255)
+  status: VARCHAR(50)
+  configuration: JSON
+  ip_address: VARCHAR(45)
+  last_seen: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+table(TelemetryData) {
+  primary_key(id): BIGINT
+  foreign_key(device_id): BIGINT
+  metric_name: VARCHAR(255)
+  metric_value: DECIMAL(12,4)
+  unit: VARCHAR(50)
+  timestamp: TIMESTAMP
+  quality: VARCHAR(20)
+}
+
+table(Notification) {
+  primary_key(id): BIGINT
+  foreign_key(user_id): BIGINT
+  title: VARCHAR(255)
+  message: TEXT
+  notification_type: VARCHAR(50)
+  channel: VARCHAR(50)
+  status: VARCHAR(50)
+  sent_at: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+table(UserHouseAccess) {
+  primary_key(id): BIGINT
+  foreign_key(user_id): BIGINT
+  foreign_key(house_id): BIGINT
+  access_level: VARCHAR(50)
+  granted_at: TIMESTAMP
+}
+
+' === СВЯЗИ ===
+
+User ||--o{ House : owns
+User ||--o{ Notification : receives
+User ||--o{ UserHouseAccess : has_access
+
+House ||--o{ Room : contains
+House ||--o{ UserHouseAccess : shared_with
+
+Room ||--o{ Device : located_in
+
+DeviceType ||--o{ Device : categorizes
+
+Device ||--o{ TelemetryData : generates
+
+@enduml
