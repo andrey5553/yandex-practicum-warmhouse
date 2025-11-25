@@ -8,6 +8,7 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -20,17 +21,27 @@ services:
       retries: 5
 
   temperature-api:
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     build:
-      context: ./smart_home  # путь к папке с Dockerfile для temperature-api
+      context: ./temperature-api
       dockerfile: Dockerfile
-    container_name: smarthome-temperature-api
-    ports:
-      - "8081:8081"  # внешний:внутренний порт
+    container_name: temperature-api
     environment:
-      - PORT=8081
-    restart: unless-stopped
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8082
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - smarthome-network
+    restart: unless-stopped
 
   app:
     build:
@@ -44,7 +55,7 @@ services:
         condition: service_started
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
-      - TEMPERATURE_API_URL=http://temperature-api:8081
+      - TEMPERATURE_API_URL=http://temperature-api:8082
     ports:
       - "8080:8080"
     restart: unless-stopped
