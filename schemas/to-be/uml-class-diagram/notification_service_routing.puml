@@ -1,0 +1,42 @@
+@startuml
+title Notification Service - Система доставки
+
+class NotificationEngine {
+  - routers: List<INotificationRouter>
+  - templateService: TemplateService
+  + processEvent(event): void
+  + routeNotification(notification): void
+}
+
+interface INotificationRouter {
+  <<interface>>
+  + canHandle(channel): boolean
+  + send(notification): DeliveryResult
+}
+
+class EmailRouter {
+  - smtpClient: ISMTPClient
+  + send(notification): DeliveryResult
+}
+
+class PushRouter {
+  - fcmClient: IFCMClient
+  + send(notification): DeliveryResult
+}
+
+class SMSRouter {
+  - gateway: ISMSGateway
+  + send(notification): DeliveryResult
+}
+
+NotificationEngine --> INotificationRouter
+INotificationRouter <|.. EmailRouter
+INotificationRouter <|.. PushRouter
+INotificationRouter <|.. SMSRouter
+
+note right of NotificationEngine
+  **Strategy Pattern**
+  Динамический выбор канала
+  доставки уведомлений
+end note
+@enduml

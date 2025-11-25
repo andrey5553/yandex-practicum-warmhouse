@@ -1,0 +1,87 @@
+@startuml
+!include <C4/C4_Container>
+
+title Контейнерная диаграмма - Система "Умный дом"
+
+Person(user, "Пользователь", "Владелец умного дома")
+
+' === ФРОНТЕНД КОНТЕЙНЕРЫ ===
+System_Boundary(frontend, "Frontend Layer") {
+    Container(spa, "Web Application", "React", "Single Page Application для управления домом")
+    Container(mobile_app, "Mobile App", "React Native", "Мобильное приложение для iOS/Android")
+}
+
+' === БЭКЕНД СЕРВИСЫ (микросервисы) ===
+System_Boundary(backend, "Backend Services") {
+    Container(api_gateway, "API Gateway", "Kong/Nginx", "Единая точка входа, маршрутизация, rate limiting")
+    
+    Container(auth_service, "Auth Service", "Python/FastAPI", "Аутентификация, авторизация, управление пользователями")
+    Container(device_service, "Device Service", "Python/FastAPI", "Управление устройствами и датчиками")
+    Container(home_service, "Home Service", "Python/FastAPI", "Управление домами и помещениями")
+    Container(telemetry_service, "Telemetry Service", "Python/FastAPI", "Сбор и анализ телеметрии")
+    Container(notification_service, "Notification Service", "Python/FastAPI", "Управление уведомлениями")
+}
+
+' === БАЗЫ ДАННЫХ ===
+System_Boundary(databases, "Data Storage") {
+    ContainerDb(auth_db, "Auth Database", "PostgreSQL", "Пользователи, роли, разрешения, сессии")
+    ContainerDb(device_db, "Device Database", "PostgreSQL", "Устройства, датчики, конфигурации, статусы")
+    ContainerDb(home_db, "Home Database", "PostgreSQL", "Дома, помещения, геолокации")
+    ContainerDb(telemetry_db, "Telemetry Database", "ClickHouse", "Метрики, временные ряды, аналитика")
+}
+
+' === ИНФРАСТРУКТУРА ===
+System_Boundary(infrastructure, "Infrastructure") {
+    ContainerQueue(message_broker, "Message Broker", "Apache Kafka", "Асинхронная коммуникация между сервисами")
+    Container(redis_cache, "Cache", "Redis", "Кэширование данных, сессии")
+    Container(file_storage, "File Storage", "MinIO/S3", "Хранение файлов, конфигураций, backup")
+}
+
+' === ВНЕШНИЕ СИСТЕМЫ ===
+System_Ext(email_system, "Email System", "SMTP Server", "Отправка email уведомлений")
+System_Ext(sms_gateway, "SMS Gateway", "SMS Provider API", "Отправка SMS уведомлений")
+System_Ext(iot_devices, "IoT Devices", "MQTT/HTTP", "Физические датчики и устройства")
+
+' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+
+' Пользовательские взаимодействия
+Rel(user, spa, "Управляет домом через веб-интерфейс", "HTTPS")
+Rel(user, mobile_app, "Управляет домом через мобильное приложение", "HTTPS")
+
+' Frontend -> Backend
+Rel(spa, api_gateway, "API запросы", "REST/HTTPS")
+Rel(mobile_app, api_gateway, "API запросы", "REST/HTTPS")
+
+' API Gateway -> Сервисы
+Rel(api_gateway, auth_service, "Аутентификация запросов", "HTTP/JWT")
+Rel(api_gateway, device_service, "Запросы устройств", "HTTP/JWT")
+Rel(api_gateway, home_service, "Запросы домов", "HTTP/JWT")
+Rel(api_gateway, telemetry_service, "Запросы телеметрии", "HTTP/JWT")
+Rel(api_gateway, notification_service, "Управление уведомлениями", "HTTP/JWT")
+
+' Сервисы -> Базы данных
+Rel(auth_service, auth_db, "Чтение/запись пользователей", "SQL/Connection Pool")
+Rel(device_service, device_db, "Чтение/запись устройств", "SQL/Connection Pool")
+Rel(home_service, home_db, "Чтение/запись домов", "SQL/Connection Pool")
+Rel(telemetry_service, telemetry_db, "Запись/анализ метрик", "SQL/Bulk Insert")
+
+' Межсервисная коммуникация
+Rel(device_service, message_broker, "Публикует события устройств", "Kafka Protocol")
+Rel(telemetry_service, message_broker, "Читает события для анализа", "Kafka Protocol")
+Rel(notification_service, message_broker, "Читает события для уведомлений", "Kafka Protocol")
+
+' Внешние интеграции
+Rel(device_service, iot_devices, "Обмен данными с датчиками", "MQTT over TLS/HTTP")
+Rel(notification_service, email_system, "Отправка email", "SMTP/STARTTLS")
+Rel(notification_service, sms_gateway, "Отправка SMS", "REST API")
+
+' Кэширование
+Rel(auth_service, redis_cache, "Кэширование сессий", "Redis Protocol")
+Rel(device_service, redis_cache, "Кэширование состояния устройств", "Redis Protocol")
+Rel(home_service, redis_cache, "Кэширование данных домов", "Redis Protocol")
+
+' Файловое хранилище
+Rel(device_service, file_storage, "Хранение конфигураций", "S3 API")
+Rel(telemetry_service, file_storage, "Backup метрик", "S3 API")
+
+@enduml

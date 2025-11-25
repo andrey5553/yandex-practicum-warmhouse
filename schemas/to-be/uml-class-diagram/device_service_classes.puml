@@ -1,0 +1,53 @@
+@startuml
+title Device Service - Критичные классы
+
+class DeviceManager {
+  - deviceRepository: IDeviceRepository
+  - stateService: IStateService
+  + registerDevice(deviceData): Device
+  + sendCommand(deviceId, command): CommandResult
+  + getDeviceState(deviceId): DeviceState
+}
+
+class Device {
+  - id: string
+  - name: string
+  - type: DeviceType
+  - status: DeviceStatus
+  - configuration: DeviceConfig
+  + updateState(newState): void
+  + validateCommand(command): boolean
+}
+
+class DeviceState {
+  - deviceId: string
+  - currentState: StateValue
+  - lastUpdated: DateTime
+  - metadata: Map<string, any>
+}
+
+class IDeviceRepository {
+  <<interface>>
+  + findById(id): Device
+  + save(device): void
+  + findByStatus(status): Device[]
+}
+
+class MQTTProtocolHandler {
+  - mqttClient: IMQTTClient
+  + connect(device): void
+  + publish(command): void
+  + subscribe(sensorData): void
+}
+
+DeviceManager --> IDeviceRepository
+DeviceManager --> Device
+DeviceManager --> MQTTProtocolHandler
+Device --> DeviceState
+
+note right of DeviceManager
+  **Сердце системы**
+  Управляет жизненным циклом
+  устройств и командой
+end note
+@enduml

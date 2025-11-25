@@ -1,0 +1,71 @@
+@startuml
+!include <C4/C4_Component>
+
+title Контейнер Notification Service - Упрощенная архитектура
+
+Container(notification_service, "Notification Service", "Python/FastAPI", "Управление уведомлениями и доставкой")
+
+' === ОСНОВНЫЕ КОМПОНЕНТЫ ===
+Component(api, "REST API", "FastAPI", "API endpoints для управления уведомлениями")
+Component(notification_engine, "Notification Engine", "Business Logic", "Обработка и маршрутизация уведомлений")
+Component(event_processor, "Event Processor", "Kafka Consumer", "Обработка событий из других сервисов")
+
+' === КАНАЛЫ ДОСТАВКИ ===
+Component(email_handler, "Email Handler", "SMTP Client", "Отправка email")
+Component(sms_handler, "SMS Handler", "SMS Gateway", "Отправка SMS")
+Component(push_handler, "Push Handler", "FCM/APNS", "Push уведомления")
+Component(webhook_handler, "Webhook Handler", "HTTP Client", "Webhook уведомления")
+
+' === ХРАНИЛИЩА ДАННЫХ ===
+ContainerDb(notification_db, "Notification Database", "PostgreSQL", "Уведомления, шаблоны, история")
+Container(redis_cache, "Redis Cache", "Redis", "Кэш шаблонов и rate limiting")
+Container(message_broker, "Message Broker", "Apache Kafka", "События для уведомлений")
+
+' === ВНЕШНИЕ СИСТЕМЫ ===
+System_Ext(email_provider, "Email Provider", "SMTP/API", "Провайдер email")
+System_Ext(sms_provider, "SMS Provider", "SMS Gateway", "Провайдер SMS")
+System_Ext(push_provider, "Push Provider", "FCM/APNS", "Провайдер push")
+System_Ext(webhook_consumers, "Webhook Consumers", "HTTP Endpoints", "Внешние системы")
+
+' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+
+' Внутренняя логика
+Rel(api, notification_engine, "Создание уведомлений", "internal")
+Rel(event_processor, notification_engine, "Обработка событий", "internal")
+
+' Маршрутизация по каналам
+Rel(notification_engine, email_handler, "Email уведомления", "internal")
+Rel(notification_engine, sms_handler, "SMS уведомления", "internal")
+Rel(notification_engine, push_handler, "Push уведомления", "internal")
+Rel(notification_engine, webhook_handler, "Webhook уведомления", "internal")
+
+' Взаимодействие с хранилищами
+Rel(notification_engine, notification_db, "Сохранение истории", "SQL")
+Rel(notification_engine, redis_cache, "Кэш и лимиты", "Redis")
+Rel(event_processor, message_broker, "Чтение событий", "Kafka")
+
+' Интеграции с провайдерами
+Rel(email_handler, email_provider, "Отправка email", "SMTP/API")
+Rel(sms_handler, sms_provider, "Отправка SMS", "REST API")
+Rel(push_handler, push_provider, "Отправка push", "FCM/APNS API")
+Rel(webhook_handler, webhook_consumers, "Вызов webhook", "HTTP/HTTPS")
+
+' === КЛЮЧЕВЫЕ ФУНКЦИИ ===
+note right of notification_engine
+  <b>Основные функции:</b>
+  • Мульти-канальная доставка
+  • Шаблонизация сообщений
+  • Управление предпочтениями
+  • Rate limiting
+  • Отслеживание доставки
+end note
+
+note left of event_processor
+  <b>Обрабатывает события:</b>
+  • user.registered
+  • device.alert  
+  • security.breach
+  • payment.received
+end note
+
+@enduml

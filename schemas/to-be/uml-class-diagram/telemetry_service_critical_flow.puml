@@ -1,0 +1,20 @@
+@startuml
+title Telemetry Service - Обработка потока данных
+
+participant "IoT Device" as Device
+participant DataIngestor
+participant MetricsProcessor
+participant ClickHouseDB
+participant "Kafka" as Kafka
+
+Device -> DataIngestor: MQTT telemetry\n{deviceId, metric, value, timestamp}
+DataIngestor -> Kafka: bufferMessage(telemetry)
+Kafka -> MetricsProcessor: consumeMessage()
+MetricsProcessor -> MetricsProcessor: aggregate(telemetry)
+MetricsProcessor -> MetricsProcessor: detectAnomalies()
+MetricsProcessor -> ClickHouseDB: bulkInsert(aggregatedData)
+
+group Аномалия обнаружена
+  MetricsProcessor -> Kafka: publishAlert(anomaly)
+end
+@enduml

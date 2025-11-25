@@ -1,0 +1,62 @@
+@startuml
+!include <C4/C4_Component>
+
+title Home Service - Архитектура компонентов
+
+Container(home_service, "Home Service", "Python/FastAPI", "Управление домами, помещениями и геолокациями")
+
+' === ОСНОВНЫЕ КОМПОНЕНТЫ ===
+Component(home_api, "Home API", "FastAPI", "API для управления домами и помещениями")
+Component(geolocation_service, "Geolocation Service", "Geo Logic", "Управление геоданными и границами")
+Component(space_manager, "Space Manager", "Business Logic", "Логика управления помещениями")
+
+' === ХРАНИЛИЩА ДАННЫХ ===
+ContainerDb(home_db, "Home Database", "PostgreSQL", "Дома, помещения, геолокации")
+Container(redis_cache, "Redis Cache", "Redis", "Кэш пространственных данных")
+
+' === ВНЕШНИЕ СИСТЕМЫ ===
+System_Ext(map_provider, "Map Provider", "API", "Геокодирование и карты")
+
+' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+
+' Управление домами
+Rel(home_api, space_manager, "Запросы домов и помещений", "internal")
+Rel(space_manager, geolocation_service, "Пространственные данные", "internal")
+
+' Работа с данными
+Rel(space_manager, home_db, "Метаданные домов", "SQL")
+Rel(geolocation_service, redis_cache, "Кэш геоданных", "Redis")
+
+' Внешние интеграции
+Rel(geolocation_service, map_provider, "Геокодирование адресов", "API")
+
+' API функции
+Rel(home_api, home_db, "Прямые запросы", "SQL")
+Rel(home_api, redis_cache, "Быстрый доступ", "Redis")
+
+note right of home_service
+  <b>Основные функции:</b>
+  • Управление домами
+  • Организация помещений
+  • Геолокация объектов
+  • Пространственная логика
+  • Иерархия расположений
+end note
+
+note left of space_manager
+  <b>Управляет:</b>
+  • Иерархией домов
+  • Зонами и помещениями
+  • Расположением устройств
+  • Правами доступа
+end note
+
+note bottom of home_db
+  <b>Хранит:</b>
+  • Дома и помещения
+  • Географические данные
+  • Иерархии расположений
+  • Настройки пространств
+end note
+
+@enduml

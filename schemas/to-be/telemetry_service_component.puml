@@ -1,0 +1,68 @@
+@startuml
+!include <C4/C4_Component>
+
+title Telemetry Service - Архитектура компонентов
+
+Container(telemetry_service, "Telemetry Service", "Python/FastAPI", "Сбор, хранение и анализ телеметрии")
+
+' === ОСНОВНЫЕ КОМПОНЕНТЫ ===
+Component(telemetry_api, "Telemetry API", "FastAPI", "API для работы с телеметрией")
+Component(data_ingestor, "Data Ingestor", "Kafka Consumer", "Прием потоков телеметрии")
+Component(metrics_processor, "Metrics Processor", "Stream Processor", "Обработка и агрегация метрик")
+Component(analytics_engine, "Analytics Engine", "Analytics Logic", "Аналитика и выявление аномалий")
+
+' === ХРАНИЛИЩА ДАННЫХ ===
+ContainerDb(telemetry_db, "Telemetry Database", "ClickHouse", "Временные ряды и метрики")
+Container(redis_cache, "Redis Cache", "Redis", "Кэш агрегированных данных")
+Container(message_broker, "Message Broker", "Apache Kafka", "Поток телеметрии")
+
+' === ВНЕШНИЕ СИСТЕМЫ ===
+System_Ext(data_sources, "Data Sources", "MQTT/HTTP", "Устройства и сенсоры")
+
+' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+
+' Прием данных
+Rel(data_sources, data_ingestor, "Поток телеметрии", "MQTT/HTTP")
+Rel(data_ingestor, message_broker, "Буферизация данных", "Kafka")
+
+' Обработка данных
+Rel(data_ingestor, metrics_processor, "Сырые метрики", "internal")
+Rel(metrics_processor, analytics_engine, "Агрегированные данные", "internal")
+
+' Хранение данных
+Rel(metrics_processor, telemetry_db, "Метрики и временные ряды", "Bulk Insert")
+Rel(analytics_engine, redis_cache, "Результаты аналитики", "Redis")
+
+' API доступ
+Rel(telemetry_api, telemetry_db, "Запросы метрик", "SQL")
+Rel(telemetry_api, redis_cache, "Быстрые агрегации", "Redis")
+
+' Обратная связь
+Rel(analytics_engine, message_broker, "События аномалий", "Kafka")
+
+note right of telemetry_service
+  <b>Основные функции:</b>
+  • Прием потоков телеметрии
+  • Агрегация метрик
+  • Анализ временных рядов
+  • Выявление аномалий
+  • API для доступа к данным
+end note
+
+note left of data_ingestor
+  <b>Обрабатывает:</b>
+  • 10K+ сообщений/сек
+  • Данные с устройств
+  • Показания сенсоров
+  • Системные метрики
+end note
+
+note bottom of telemetry_db
+  <b>Хранит:</b>
+  • Временные ряды
+  • Агрегированные метрики
+  • Статистику за 2 года
+  • Данные для ML
+end note
+
+@enduml

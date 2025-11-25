@@ -1,0 +1,75 @@
+@startuml
+!include <C4/C4_Component>
+
+title Auth Service - Архитектура компонентов
+
+Container(auth_service, "Auth Service", "Python/FastAPI", "Аутентификация, авторизация и управление пользователями")
+
+' === ОСНОВНЫЕ КОМПОНЕНТЫ ===
+Component(auth_api, "Auth API", "FastAPI", "API для аутентификации и регистрации")
+Component(user_api, "User API", "FastAPI", "API для управления пользователями")
+Component(auth_engine, "Auth Engine", "Business Logic", "Движок аутентификации и авторизации")
+Component(token_service, "Token Service", "JWT/Bcrypt", "Управление токенами и паролями")
+Component(session_service, "Session Service", "Redis Client", "Управление сессиями")
+
+' === ВСПОМОГАТЕЛЬНЫЕ СЕРВИСЫ ===
+Component(email_sender, "Email Sender", "SMTP Client", "Верификация и сброс пароля")
+Component(audit_logger, "Audit Logger", "Logging Service", "Логирование событий безопасности")
+
+' === ХРАНИЛИЩА ДАННЫХ ===
+ContainerDb(auth_db, "Auth Database", "PostgreSQL", "Пользователи, роли, разрешения")
+Container(redis_cache, "Redis Cache", "Redis", "Сессии и blacklist токенов")
+Container(message_broker, "Message Broker", "Apache Kafka", "События безопасности")
+
+' === ВНЕШНИЕ СИСТЕМЫ ===
+System_Ext(email_provider, "Email Provider", "SMTP/API", "Отправка email")
+
+' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+
+' Внутренняя логика
+Rel(auth_api, auth_engine, "Запросы аутентификации", "internal")
+Rel(user_api, auth_engine, "Запросы пользователей", "internal")
+Rel(auth_engine, token_service, "Валидация учетных данных", "internal")
+Rel(auth_engine, session_service, "Управление сессиями", "internal")
+
+' Работа с данными
+Rel(auth_engine, auth_db, "Пользователи и роли", "SQL")
+Rel(token_service, redis_cache, "Blacklist токенов", "Redis")
+Rel(session_service, redis_cache, "Активные сессии", "Redis")
+Rel(audit_logger, message_broker, "События безопасности", "Kafka")
+
+' Внешние интеграции
+Rel(auth_engine, email_sender, "Запросы на отправку email", "internal")
+Rel(email_sender, email_provider, "Отправка email", "SMTP/API")
+
+' Потоки данных аутентификации
+Rel(token_service, auth_db, "Верификация паролей", "SQL")
+Rel(auth_engine, audit_logger, "Логирование действий", "internal")
+
+note right of auth_service
+  <b>Основные функции:</b>
+  • Регистрация и вход
+  • JWT аутентификация
+  • Управление сессиями
+  • Сброс пароля
+  • Верификация email
+  • Аудит безопасности
+end note
+
+note left of auth_engine
+  <b>Обрабатывает:</b>
+  • Логин/логаут
+  • Регистрацию
+  • Обновление токенов
+  • Верификацию прав
+end note
+
+note bottom of auth_db
+  <b>Хранит:</b>
+  • Пользователи
+  • Роли и права
+  • Хеши паролей
+  • История действий
+end note
+
+@enduml
