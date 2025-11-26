@@ -43,6 +43,44 @@ services:
       - smarthome-network
     restart: unless-stopped
 
+  device-service:
+    build: 
+      context: ./device-service
+      dockerfile: Dockerfile
+    container_name: device-service
+    ports:
+      - "8083:8083"
+    environment:
+      - DATABASE_URL=postgresql://user:password@device-db:5432/device_service
+      - HOST=0.0.0.0
+      - PORT=8083
+    depends_on:
+      device-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  device-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=device_service
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5433:5432"
+    volumes:
+      - device_data:/var/lib/postgresql/data
+      - ./device-service/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d device_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: ./smart_home
@@ -53,9 +91,12 @@ services:
         condition: service_healthy
       temperature-api:
         condition: service_started
+      device-service:
+        condition: service_started
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
       - TEMPERATURE_API_URL=http://temperature-api:8082
+      - DEVICE_SERVICE_URL=http://device-service:8083
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -64,6 +105,7 @@ services:
 
 volumes:
   postgres_data:
+  device_data:
 
 networks:
   smarthome-network:

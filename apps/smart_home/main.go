@@ -32,6 +32,11 @@ func main() {
 	temperatureService := services.NewTemperatureService(temperatureAPIURL)
 	log.Printf("Temperature service initialized with API URL: %s\n", temperatureAPIURL)
 
+	// Initialize device service
+	deviceServiceURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8083")
+	deviceService := services.NewDeviceService(deviceServiceURL)
+	log.Printf("Device service initialized with URL: %s\n", deviceServiceURL)
+
 	// Initialize router
 	router := gin.Default()
 
@@ -49,15 +54,20 @@ func main() {
 	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
 	sensorHandler.RegisterRoutes(apiRoutes)
 
+	// Register device routes
+	deviceHandler := handlers.NewDeviceHandler(deviceService)
+	deviceHandler.RegisterRoutes(apiRoutes)
+
 	// Start server
+	port := getEnv("PORT", ":8080")
 	srv := &http.Server{
-		Addr:    getEnv("PORT", ":8080"),
+		Addr:    port,
 		Handler: router,
 	}
 
 	// Start the server in a goroutine
 	go func() {
-		log.Printf("Server starting on %s\n", srv.Addr)
+		log.Printf("Server starting on %s\n", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v\n", err)
 		}
