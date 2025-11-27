@@ -37,6 +37,11 @@ func main() {
 	deviceService := services.NewDeviceService(deviceServiceURL)
 	log.Printf("Device service initialized with URL: %s\n", deviceServiceURL)
 
+	// Initialize telemetry service - ОБЪЯВЛЯЕМ переменную
+	telemetryServiceURL := getEnv("TELEMETRY_SERVICE_URL", "http://telemetry-service:8084")
+	telemetryService := services.NewTelemetryService(telemetryServiceURL) // ВОТ ОБЪЯВЛЕНИЕ
+	log.Printf("Telemetry service initialized with URL: %s\n", telemetryServiceURL)
+
 	// Initialize router
 	router := gin.Default()
 
@@ -50,13 +55,17 @@ func main() {
 	// API routes
 	apiRoutes := router.Group("/api/v1")
 
-	// Register sensor routes
-	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
+	// Register sensor routes - ВРЕМЕННО БЕЗ telemetryService
+	sensorHandler := handlers.NewSensorHandler(database, temperatureService, telemetryService) // УБИРАЕМ telemetryService
 	sensorHandler.RegisterRoutes(apiRoutes)
 
 	// Register device routes
 	deviceHandler := handlers.NewDeviceHandler(deviceService)
 	deviceHandler.RegisterRoutes(apiRoutes)
+
+	// Register telemetry routes
+	telemetryHandler := handlers.NewTelemetryHandler(telemetryService)
+	telemetryHandler.RegisterRoutes(apiRoutes)
 
 	// Start server
 	port := getEnv("PORT", ":8080")

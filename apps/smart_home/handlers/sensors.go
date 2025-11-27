@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+    "time" 
 
 	"smarthome/db"
 	"smarthome/models"
@@ -18,13 +19,15 @@ import (
 type SensorHandler struct {
 	DB                 *db.DB
 	TemperatureService *services.TemperatureService
+	TelemetryService   *services.TelemetryService  
 }
 
 // NewSensorHandler creates a new SensorHandler
-func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
+func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService, telemetryService *services.TelemetryService) *SensorHandler {
 	return &SensorHandler{
 		DB:                 db,
 		TemperatureService: temperatureService,
+		TelemetryService:   telemetryService, 
 	}
 }
 
@@ -207,6 +210,37 @@ func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// ДОБАВЛЯЕМ отправку телеметрии (если сервис доступен)
+	if h.TelemetryService != nil {
+		// Получаем информацию о сенсоре для unit
+		sensor, err := h.DB.GetSensorByID(context.Background(), id)
+		unit := "units"
+		if err == nil {
+			unit = sensor.Unit
+		}
+
+		telemetryData := services.TelemetryData{
+			DeviceID:  id,
+			Timestamp: time.Now(),
+			Metrics: []services.Metric{
+				{
+					Name:  "sensor_value",
+					Value: request.Value,
+					Unit:  unit,
+				},
+			},
+		}
+
+		// Отправляем телеметрию асинхронно
+		go func() {
+			if err := h.TelemetryService.SendTelemetry(telemetryData); err != nil {
+				log.Printf("Failed to send telemetry for sensor %d: %v", id, err)
+			} else {
+				log.Printf("Telemetry sent for sensor %d", id)
+			}
+		}()
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Sensor value updated successfully"})

@@ -1,2 +1,3 @@
-docker-compose build smarthome-app
-docker-compose up -d
+docker-compose down
+docker-compose build --no-cache app
+docker-compose up app
