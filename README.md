@@ -36,13 +36,13 @@
 Границы контекста:
 1. Контекст - Управление датчиками температуры
 
-- Входные точки: 
-GET /sensors,
-GET /sensors/:id,
-POST /sensors,
-PUT /sensors/:id,
-PATCH /sensors/:id/value.
-DELETE /sensors/:id,
+- Входные точки:
+- GET /sensors,
+- GET /sensors/:id,
+- POST /sensors,
+- PUT /sensors/:id,
+- PATCH /sensors/:id/value.
+- DELETE /sensors/:id,
 
 - External resources:
 База данных PostgreSQL.
@@ -55,7 +55,7 @@ DELETE /sensors/:id,
   (для температурных сенсоров).
 
 - Внешние зависимости:
-  Внешний сервис REST API.
+-   Внешний сервис REST API.
 
 ### **4. Проблемы монолитного решения**
 
@@ -138,18 +138,18 @@ DELETE /sensors/:id,
 Архитектура device-service в монолите
 1. Поток данных устройств
 
-┌─────────────┐    REST API    ┌────────────────────────┐
-│   Монолит   │ ──────────────>│ Device Service (python)│
-│  (Go app)   │                │   (отдельный)          │
-│             │ <──────────────│                        │
-└─────────────┘    Response    └────────────────────────┘
-       │                              │
-       │ PostgreSQL                   │ PostgreSQL
-       ▼                              ▼
-┌─────────────┐                ┌──────────────────┐
-│   Sensors   │                │    Devices       │
-│    Table    │                │     Table        │
-└─────────────┘                └──────────────────┘
+┌─────────────────┐    REST API    ┌─────────────────────────┐
+│    Монолит      │ ──────────────>│  Device Service         │
+│   (Go app)      │                │   (python)              │
+│                 │ <──────────────│                         │
+└─────────────────┘    Response    └─────────────────────────┘
+         │                                │
+         │ PostgreSQL                     │ PostgreSQL
+         ▼                                ▼
+┌─────────────────┐                ┌───────────────────┐
+│   Sensors       │                │    Devices        │
+│    Table        │                │     Table         │
+└─────────────────┘                └───────────────────┘
 
 2. Ключевые компоненты интеграции
 A. Клиент device-service (Go)
