@@ -79,14 +79,15 @@
 [Containers](schemas/to-be/containers.puml)
 
 **Диаграмма компонентов (Components)**
-[Identity Service](diagrams/identity-service.puml)
+- [Authentification Service](schemas/auth_component.puml)
+- [Devices Service](schemas/auth_component.puml)
 
 **Диаграмма кода (Code)**
 
-[Auth Code](schemas/to-be//uml-class-diagram/auth_component_sequence_diagram.puml)
-[Devices Code](schemas/to-be//uml-class-diagram/device_service_classes.puml)
-[Notification Code](schemas/to-be//uml-class-diagram/notification_service_routing.puml)
-[Critical Telemetry Code](schemas/to-be//uml-class-diagram/telemetry_service_critical_flow.puml)
+- [Auth Code](schemas/to-be//uml-class-diagram/auth_component_sequence_diagram.puml)
+- [Devices Classes](schemas/to-be//uml-class-diagram/device_service_classes.puml)
+- [Notification Code](schemas/to-be//uml-class-diagram/notification_service_routing.puml)
+- [Telemetry Classes](schemas/to-be//uml-class-diagram/telemetry_service_classes.puml)
 
 # Задание 3. Разработка ER-диаграммы
 
@@ -149,22 +150,22 @@ A. Клиент device-service (Go)
 // - SendCommand() - отправка команды устройству
 
 3. REST API endpoints device-service
-  Получение всех устройств - GET /api/v1/devices
-  Создание устройства - POST /api/v1/devices
-  Отправка команды устройству POST /api/v1/devices/{id}/commands
+   -  Получение всех устройств - GET /api/v1/devices
+   -  Создание устройства - POST /api/v1/devices
+   -  Отправка команды устройству POST /api/v1/devices/{id}/commands
 
-4. Сценарии использования
+5. Сценарии использования
   A. Управление устройствами через монолит
   # Пользователь включает свет через монолит
-  POST http://localhost:8080/api/v1/devices/1/commands
+  POST api/v1/devices/1/commands
 
   B. Получение списка устройств
   # Мобильное приложение запрашивает устройства
-  GET http://localhost:8080/api/v1/devices
+  GET api/v1/devices
 
   C. Создание нового устройства
   # Админ добавляет новое устройство
-  POST http://localhost:8080/api/v1/devices
+  POST api/v1/devices
 
 # [Новый микросервис телеметрии](apps/telemetry-service/)
 Архитектура telemetry-service в монолите
@@ -179,18 +180,15 @@ A. Клиент device-service (Go)
   - GetAggregatedHouseTelemetry() - агрегация
 
 3. REST API endpoints telemetry-service
-  POST /api/v1/telemetry - отправка телеметрии
-  GET  /api/v1/telemetry/devices/{id} - получение телеметрии устройства  
-  GET  /api/v1/telemetry/houses/{id}/aggregated - агрегированные данные
+   -  POST /api/v1/telemetry - отправка телеметрии
+   -  GET  /api/v1/telemetry/devices/{id} - получение телеметрии устройства
+   -  GET  /api/v1/telemetry/houses/{id}/aggregated - агрегированные данные
 
-4. Сценарии использования
-  Шаг 1: Обновление значения сенсора
-  PATCH /api/v1/sensors/123/value
-  Шаг 2: Монолит отправляет телеметрию асинхронно
-  Шаг 3: Микросервис телеметрии принимает данные
-  Шаг 4: Запрос телеметрии
-    Клиент запрашивает историю телеметрии
-	GET /api/v1/telemetry/devices/123?metric=sensor_value&aggregation=hour
+5. Сценарии использования
+  - Шаг 1: Обновление значения сенсора  PATCH /api/v1/sensors/123/value
+  - Шаг 2: Монолит отправляет телеметрию асинхронно
+  - Шаг 3: Микросервис телеметрии принимает данные
+  - Шаг 4: Запрос телеметрии.  Клиент запрашивает историю телеметрии GET /api/v1/telemetry/devices/123?metric=sensor_value&aggregation=hour
 
 
 
