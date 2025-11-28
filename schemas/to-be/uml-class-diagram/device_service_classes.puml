@@ -1,53 +1,78 @@
 @startuml
-title Device Service - Критичные классы
+title Device Service - Актуальные классы
 
 class DeviceManager {
   - deviceRepository: IDeviceRepository
-  - stateService: IStateService
-  + registerDevice(deviceData): Device
+  - protocolHandler: IProtocolHandler
+  + getAllDevices(): List<Device>
+  + createDevice(deviceData): Device
   + sendCommand(deviceId, command): CommandResult
-  + getDeviceState(deviceId): DeviceState
+  + updateDeviceStatus(deviceId, status): void
 }
 
 class Device {
-  - id: string
-  - name: string
-  - type: DeviceType
-  - status: DeviceStatus
-  - configuration: DeviceConfig
-  + updateState(newState): void
-  + validateCommand(command): boolean
+  - id: Integer
+  - name: String
+  - type: String
+  - device_type_id: Integer
+  - room_id: Integer
+  - serial_number: String
+  - status: String
+  - configuration: JSON
+  - last_seen: DateTime
+  - is_active: Boolean
+  + validateConfiguration(): boolean
 }
 
-class DeviceState {
-  - deviceId: string
-  - currentState: StateValue
-  - lastUpdated: DateTime
-  - metadata: Map<string, any>
+class DeviceCommand {
+  - id: Integer
+  - device_id: Integer
+  - command_type: String
+  - payload: JSON
+  - status: String
+  - created_at: DateTime
 }
 
 class IDeviceRepository {
   <<interface>>
   + findById(id): Device
-  + save(device): void
-  + findByStatus(status): Device[]
+  + findAll(): List<Device>
+  + save(device): Device
+  + findByRoom(roomId): List<Device>
+  + updateStatus(deviceId, status): void
 }
 
-class MQTTProtocolHandler {
-  - mqttClient: IMQTTClient
-  + connect(device): void
-  + publish(command): void
-  + subscribe(sensorData): void
+class ProtocolHandler {
+  - mqttHandler: MQTTHandler
+  - httpHandler: HTTPHandler
+  + sendCommand(device, command): boolean
+  + handleTelemetry(data): void
+}
+
+class MQTTHandler {
+  - client: IMQTTClient
+  + connect(): void
+  + publish(topic, message): void
+  + subscribe(topic, callback): void
 }
 
 DeviceManager --> IDeviceRepository
+DeviceManager --> ProtocolHandler
 DeviceManager --> Device
-DeviceManager --> MQTTProtocolHandler
-Device --> DeviceState
+DeviceManager --> DeviceCommand
+ProtocolHandler --> MQTTHandler
+Device --> DeviceCommand
 
 note right of DeviceManager
-  **Сердце системы**
-  Управляет жизненным циклом
-  устройств и командой
+  **Соответствует API:**
+  GET/POST /devices
+  POST /devices/{id}/commands
+end note
+
+note left of Device
+  **Модель из Python:**
+  id, name, type, room_id,
+  serial_number, status,
+  configuration, last_seen
 end note
 @enduml

@@ -1,0 +1,78 @@
+@startuml
+title Telemetry Service - Классы для телеметрии
+
+class TelemetryManager {
+  - telemetryRepository: ITelemetryRepository
+  - aggregationService: IAggregationService
+  + processTelemetryData(data: TelemetryData): void
+  + getDeviceTelemetry(deviceId, filters): List<TelemetryPoint>
+  + getHouseAggregatedData(houseId, period): AggregatedTelemetry
+}
+
+class TelemetryData {
+  - deviceId: Integer
+  - timestamp: DateTime
+  - metrics: List<Metric>
+  + addMetric(metric: Metric): void
+  + validate(): boolean
+}
+
+class Metric {
+  - name: String
+  - value: Double
+  - unit: String
+  + getFormattedValue(): string
+}
+
+class TelemetryPoint {
+  - timestamp: DateTime
+  - value: Double
+  - unit: String
+  + isRecent(): boolean
+}
+
+class AggregatedTelemetry {
+  - houseId: Integer
+  - period: String
+  - totalEnergyConsumption: Double
+  - averageTemperature: Double
+  - deviceCount: Integer
+  - metrics: Dictionary<string, object>
+  + calculateAverages(): void
+}
+
+class ITelemetryRepository {
+  <<interface>>
+  + saveTelemetry(data: TelemetryData): void
+  + getDeviceMetrics(deviceId, from, to): List<TelemetryPoint>
+  + getAggregatedData(houseId, period): AggregatedTelemetry
+}
+
+class AggregationService {
+  - cache: ICacheService
+  + calculateHourlyAggregations(): void
+  + calculateDailyAggregations(): void
+  + getCachedAggregation(houseId, period): AggregatedTelemetry
+}
+
+TelemetryManager --> ITelemetryRepository
+TelemetryManager --> AggregationService
+TelemetryManager --> TelemetryData
+TelemetryData --> Metric
+TelemetryManager --> TelemetryPoint
+TelemetryManager --> AggregatedTelemetry
+AggregationService --> AggregatedTelemetry
+
+note right of TelemetryManager
+  **Соответствует API:**
+  POST /telemetry
+  GET /telemetry/devices/{id}
+  GET /telemetry/houses/{id}/aggregated
+end note
+
+note left of TelemetryData
+  **Модель из .NET:**
+  DeviceId, Timestamp,
+  List<Metric> Metrics
+end note
+@enduml

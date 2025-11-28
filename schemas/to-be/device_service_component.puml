@@ -1,82 +1,58 @@
 @startuml
 !include <C4/C4_Component>
 
-title Device Service - Архитектура компонентов
+title Device Service - Упрощенная архитектура для API устройств
 
-Container(device_service, "Device Service", "Python/FastAPI", "Управление IoT устройствами и датчиками")
+Container(device_service, "Device Service", "Python/FastAPI", "Управление IoT устройствами")
 
 ' === ОСНОВНЫЕ КОМПОНЕНТЫ ===
-Component(device_api, "Device API", "FastAPI", "REST API для управления устройствами")
-Component(sensor_api, "Sensor API", "FastAPI", "REST API для управления датчиками")
-Component(device_manager, "Device Manager", "Business Logic", "Управление жизненным циклом устройств")
-Component(state_manager, "State Manager", "State Machine", "Real-time состояние устройств")
-Component(protocol_adapter, "Protocol Adapter", "MQTT/HTTP/WS", "Адаптер IoT протоколов")
+Component(api, "REST API", "FastAPI", "API для управления устройствами\n• GET /api/v1/devices\n• POST /api/v1/devices\n• POST /api/v1/devices/{id}/commands")
+Component(device_manager, "Device Manager", "Business Logic", "Логика управления устройствами")
+Component(protocol_handler, "Protocol Handler", "MQTT/HTTP", "Отправка команд устройствам")
 
-' === ПОДКОМПОНЕНТЫ ПРОТОКОЛОВ ===
-Component(mqtt_handler, "MQTT Handler", "Paho-MQTT", "Общение по MQTT")
-Component(http_handler, "HTTP Handler", "HTTP Server", "REST API для устройств")
-Component(websocket_handler, "WebSocket Handler", "WS Server", "Real-time обновления")
-
-' === ХРАНИЛИЩА ДАННЫХ ===
-ContainerDb(device_db, "Device Database", "PostgreSQL", "Метаданные устройств и конфигурации")
-Container(redis_cache, "Redis Cache", "Redis", "Real-time состояние устройств")
-Container(message_broker, "Message Broker", "Apache Kafka", "События и телеметрия")
-Container(file_storage, "File Storage", "MinIO/S3", "Конфигурации устройств")
+' === ХРАНИЛИЩА ===
+ContainerDb(device_db, "Device Database", "PostgreSQL", "Устройства, конфигурации, метаданные")
+Container(state_cache, "State Cache", "Redis", "Текущее состояние устройств")
 
 ' === ВНЕШНИЕ СИСТЕМЫ ===
-System_Ext(iot_devices, "IoT Devices", "MQTT/HTTP/WS", "Физические устройства и датчики")
+System_Ext(devices, "IoT Devices", "MQTT/HTTP", "Физические устройства")
 
-' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+' === API ВЗАИМОДЕЙСТВИЯ ===
 
-' Внутренняя логика
-Rel(device_api, device_manager, "Команды устройствам", "internal")
-Rel(sensor_api, device_manager, "Управление датчиками", "internal")
-Rel(device_manager, state_manager, "Обновление состояния", "internal")
-Rel(device_manager, protocol_adapter, "Отправка команд", "internal")
+' 1. Получение всех устройств
+Rel(api, device_manager, "GET /devices", "HTTP")
+Rel(device_manager, device_db, "Запрос устройств", "SQL")
+Rel(device_db, device_manager, "Список устройств", "SQL")
+Rel(device_manager, api, "Данные устройств", "HTTP")
 
-' Протокольные обработчики
-Rel(protocol_adapter, mqtt_handler, "MQTT команды", "internal")
-Rel(protocol_adapter, http_handler, "HTTP команды", "internal")
-Rel(protocol_adapter, websocket_handler, "WS команды", "internal")
+' 2. Создание устройства
+Rel(api, device_manager, "POST /devices", "HTTP")
+Rel(device_manager, device_db, "Создание записи", "SQL")
+Rel(device_db, device_manager, "ID устройства", "SQL")
+Rel(device_manager, api, "Результат создания", "HTTP")
 
-' Взаимодействие с устройствами
-Rel(mqtt_handler, iot_devices, "MQTT over TLS", "Pub/Sub")
-Rel(http_handler, iot_devices, "REST API", "HTTPS")
-Rel(websocket_handler, iot_devices, "Real-time", "WSS")
-
-' Работа с данными
-Rel(device_manager, device_db, "Метаданные устройств", "SQL")
-Rel(state_manager, redis_cache, "Состояние в реальном времени", "Redis")
-Rel(device_manager, message_broker, "События устройств", "Kafka")
-Rel(device_manager, file_storage, "Конфигурации", "S3 API")
-
-' Телеметрия от устройств
-Rel(iot_devices, mqtt_handler, "Данные датчиков", "MQTT")
-Rel(mqtt_handler, state_manager, "Обновление состояния", "internal")
-Rel(mqtt_handler, message_broker, "Поток телеметрии", "Kafka")
+' 3. Отправка команды устройству
+Rel(api, device_manager, "POST /devices/{id}/commands", "HTTP")
+Rel(device_manager, device_db, "Проверка устройства", "SQL")
+Rel(device_manager, protocol_handler, "Команда", "internal")
+Rel(protocol_handler, devices, "Отправка команды", "MQTT/HTTP")
+Rel(devices, protocol_handler, "Подтверждение", "MQTT/HTTP")
+Rel(protocol_handler, state_cache, "Обновление состояния", "Redis")
+Rel(protocol_handler, device_manager, "Результат выполнения", "internal")
+Rel(device_manager, api, "Статус команды", "HTTP")
 
 note right of device_service
-  <b>Основные функции:</b>
-  • Управление устройствами
-  • Real-time состояние
-  • Мульти-протокольная поддержка
-  • Конфигурация устройств
-  • Сбор телеметрии
+  <b>Поддерживаемые API:</b>
+  • GET /api/v1/devices
+  • POST /api/v1/devices  
+  • POST /api/v1/devices/{id}/commands
 end note
 
-note left of protocol_adapter
-  <b>Поддерживаемые протоколы:</b>
-  • MQTT 3.1.1/5.0
-  • HTTP/REST API
+note left of protocol_handler
+  <b>Протоколы устройств:</b>
+  • MQTT (основной)
+  • HTTP REST
   • WebSocket
-end note
-
-note bottom of device_db
-  <b>Хранит:</b>
-  • Устройства
-  • Датчики  
-  • Конфигурации
-  • История команд
 end note
 
 @enduml

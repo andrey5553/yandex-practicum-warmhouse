@@ -1,68 +1,59 @@
 @startuml
 !include <C4/C4_Component>
 
-title Telemetry Service - Архитектура компонентов
+title Telemetry Service - .NET 8.0 Architecture
 
-Container(telemetry_service, "Telemetry Service", "Python/FastAPI", "Сбор, хранение и анализ телеметрии")
+Container(telemetry_service, "Telemetry Service", ".NET 8.0/ASP.NET Core", "Сбор и хранение телеметрии устройств")
 
 ' === ОСНОВНЫЕ КОМПОНЕНТЫ ===
-Component(telemetry_api, "Telemetry API", "FastAPI", "API для работы с телеметрией")
-Component(data_ingestor, "Data Ingestor", "Kafka Consumer", "Прием потоков телеметрии")
-Component(metrics_processor, "Metrics Processor", "Stream Processor", "Обработка и агрегация метрик")
-Component(analytics_engine, "Analytics Engine", "Analytics Logic", "Аналитика и выявление аномалий")
+Component(api, "Telemetry Controller", "ASP.NET Core Controller", "REST API для телеметрии\n• POST /telemetry\n• GET /telemetry/devices/{id}\n• GET /telemetry/houses/{id}/aggregated")
+Component(telemetry_service_layer, "Telemetry Service", "C# Service Layer", "Бизнес-логика обработки данных")
+Component(mqtt_service, "MQTT Service", "MQTTnet", "Фоновая служба для MQTT")
+Component(background_processor, "Background Processor", "BackgroundService", "Фоновая обработка агрегаций")
 
-' === ХРАНИЛИЩА ДАННЫХ ===
-ContainerDb(telemetry_db, "Telemetry Database", "ClickHouse", "Временные ряды и метрики")
-Container(redis_cache, "Redis Cache", "Redis", "Кэш агрегированных данных")
-Container(message_broker, "Message Broker", "Apache Kafka", "Поток телеметрии")
+' === ХРАНИЛИЩА ===
+ContainerDb(telemetry_db, "Telemetry DB", "PostgreSQL", "Сырые данные телеметрии\n(Entity Framework Core)")
+Container(aggregation_cache, "Aggregation Cache", "Redis", "Агрегированные данные\n(StackExchange.Redis)")
 
 ' === ВНЕШНИЕ СИСТЕМЫ ===
-System_Ext(data_sources, "Data Sources", "MQTT/HTTP", "Устройства и сенсоры")
+System_Ext(devices, "IoT Devices", "MQTT", "Устройства и датчики")
 
-' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+' === API ПОТОКИ ДАННЫХ ===
 
-' Прием данных
-Rel(data_sources, data_ingestor, "Поток телеметрии", "MQTT/HTTP")
-Rel(data_ingestor, message_broker, "Буферизация данных", "Kafka")
+' 1. POST /telemetry - отправка телеметрии (HTTP)
+Rel(devices, api, "Данные телеметрии", "HTTP/JSON")
+Rel(api, telemetry_service_layer, "Обработка запроса", "Dependency Injection")
+Rel(telemetry_service_layer, telemetry_db, "Сохранение через EF Core", "SQL")
 
-' Обработка данных
-Rel(data_ingestor, metrics_processor, "Сырые метрики", "internal")
-Rel(metrics_processor, analytics_engine, "Агрегированные данные", "internal")
+' 2. MQTT прием данных
+Rel(devices, mqtt_service, "Поток телеметрии", "MQTT")
+Rel(mqtt_service, telemetry_service_layer, "Обработка сообщений", "MediatR/Channel")
+Rel(telemetry_service_layer, background_processor, "Задачи агрегации", "Channel/Queue")
 
-' Хранение данных
-Rel(metrics_processor, telemetry_db, "Метрики и временные ряды", "Bulk Insert")
-Rel(analytics_engine, redis_cache, "Результаты аналитики", "Redis")
+' 3. GET /telemetry/devices/{id} - получение телеметрии устройства
+Rel(api, telemetry_service_layer, "Запрос данных устройства", "DI")
+Rel(telemetry_service_layer, telemetry_db, "LINQ запросы", "EF Core")
+Rel(telemetry_db, telemetry_service_layer, "Данные устройства", "EF Core")
+Rel(telemetry_service_layer, api, "DTO ответ", "JSON")
 
-' API доступ
-Rel(telemetry_api, telemetry_db, "Запросы метрик", "SQL")
-Rel(telemetry_api, redis_cache, "Быстрые агрегации", "Redis")
+' 4. GET /telemetry/houses/{id}/aggregated - агрегированные данные
+Rel(api, telemetry_service_layer, "Запрос агрегаций", "DI")
+Rel(telemetry_service_layer, aggregation_cache, "Получение из кэша", "Redis")
+Rel(aggregation_cache, telemetry_service_layer, "Кэшированные данные", "Redis")
+Rel(background_processor, aggregation_cache, "Обновление агрегаций", "Redis")
+Rel(telemetry_service_layer, api, "Агрегированные DTO", "JSON")
 
-' Обратная связь
-Rel(analytics_engine, message_broker, "События аномалий", "Kafka")
+' Фоновая обработка
+Rel(background_processor, telemetry_db, "Расчет агрегаций", "SQL")
 
 note right of telemetry_service
-  <b>Основные функции:</b>
-  • Прием потоков телеметрии
-  • Агрегация метрик
-  • Анализ временных рядов
-  • Выявление аномалий
-  • API для доступа к данным
-end note
-
-note left of data_ingestor
-  <b>Обрабатывает:</b>
-  • 10K+ сообщений/сек
-  • Данные с устройств
-  • Показания сенсоров
-  • Системные метрики
-end note
-
-note bottom of telemetry_db
-  <b>Хранит:</b>
-  • Временные ряды
-  • Агрегированные метрики
-  • Статистику за 2 года
-  • Данные для ML
+  <b>.NET 8.0 Stack:</b>
+  • ASP.NET Core Controllers
+  • Entity Framework Core
+  • MQTTnet библиотека
+  • BackgroundService
+  • StackExchange.Redis
+  • Dependency Injection
 end note
 
 @enduml

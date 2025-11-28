@@ -1,0 +1,113 @@
+{
+  "info": {
+    "name": "Telemetry Service API",
+    "description": "Коллекция для работы с сервисом телеметрии",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Telemetry - Send Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": 12345,\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"metrics\": [\n    {\n      \"name\": \"temperature\",\n      \"value\": 22.5,\n      \"unit\": \"celsius\"\n    },\n    {\n      \"name\": \"energy\",\n      \"value\": 150.2,\n      \"unit\": \"kWh\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/telemetry",
+          "host": ["{{base_url}}"],
+          "path": ["telemetry"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Telemetry - Get Device Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/telemetry/devices/12345?metric=temperature&from=2024-01-01T00:00:00Z&to=2024-01-15T23:59:59Z&aggregation=hour",
+          "host": ["{{base_url}}"],
+          "path": ["telemetry", "devices", "12345"],
+          "query": [
+            {
+              "key": "metric",
+              "value": "temperature"
+            },
+            {
+              "key": "from",
+              "value": "2024-01-01T00:00:00Z"
+            },
+            {
+              "key": "to",
+              "value": "2024-01-15T23:59:59Z"
+            },
+            {
+              "key": "aggregation",
+              "value": "hour"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Telemetry - Get Aggregated House Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/telemetry/houses/67890/aggregated?period=week",
+          "host": ["{{base_url}}"],
+          "path": ["telemetry", "houses", "67890", "aggregated"],
+          "query": [
+            {
+              "key": "period",
+              "value": "week"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": ["// Pre-request script if needed"]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Tests for responses",
+          "pm.test(\"Status code is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test(\"Response time is acceptable\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+          "});"
+        ]
+      }
+    }
+  ]
+}
