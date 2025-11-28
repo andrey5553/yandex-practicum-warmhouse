@@ -138,20 +138,7 @@
 Архитектура device-service в монолите
 1. Поток данных устройств
 
-┌─────────────┐      REST      ┌─────────────┐
-│   Монолит   │ ──────────────> │  Device    │
-│   (Go)      │                │  Service   │
-│             │ <────────────── │  (Python)  │
-└─────────────┘    Response    └─────────────┘
-      │                              │
-      │ PostgreSQL                   │ PostgreSQL
-      ▼                              ▼
-┌─────────────┐              ┌─────────────┐
-│  Sensors    │              │  Devices    │
-└─────────────┘              └─────────────┘
-
 <img width="397" height="256" alt="image" src="https://github.com/user-attachments/assets/1f2a4665-8f1c-4f1b-98aa-44e0217ce55f" />
-
 
 2. Ключевые компоненты интеграции
 A. Клиент device-service (Go)
@@ -183,18 +170,7 @@ A. Клиент device-service (Go)
 Архитектура telemetry-service в монолите
 1. Поток данных телеметрии
 
-┌─────────────┐    REST API    ┌──────────────────┐
-│   Монолит   │ ──────────────>│ Telemetry Service│
-│  (Go app)   │                │   (.NET 8.0)     │
-│             │ <──────────────│                  │
-└─────────────┘    Response    └──────────────────┘
-       │                              │
-       │ Database                     │ In-Memory Storage
-       ▼                              ▼
-┌─────────────┐                ┌──────────────────┐
-│ PostgreSQL  │                │   Данные в RAM   │
-│   Sensors   │                │  (временное)     │
-└─────────────┘                └──────────────────┘
+<img width="415" height="281" alt="image" src="https://github.com/user-attachments/assets/47ac43bc-638b-4264-9eaa-4b5f540d99a0" />
 
 2. Клиент телеметрии (Go)
   Основные методы:
