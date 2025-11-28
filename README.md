@@ -138,10 +138,20 @@
 Архитектура device-service в монолите
 1. Поток данных устройств
 
-flowchart TD
-    A[Монолит Go] <-->|REST API| B[Device Service Python]
-    A --> C[(Sensors Table)]
-    B --> D[(Devices Table)]
+┌─────────────┐      REST      ┌─────────────┐
+│   Монолит   │ ──────────────> │  Device    │
+│   (Go)      │                │  Service   │
+│             │ <────────────── │  (Python)  │
+└─────────────┘    Response    └─────────────┘
+      │                              │
+      │ PostgreSQL                   │ PostgreSQL
+      ▼                              ▼
+┌─────────────┐              ┌─────────────┐
+│  Sensors    │              │  Devices    │
+└─────────────┘              └─────────────┘
+
+<img width="397" height="256" alt="image" src="https://github.com/user-attachments/assets/1f2a4665-8f1c-4f1b-98aa-44e0217ce55f" />
+
 
 2. Ключевые компоненты интеграции
 A. Клиент device-service (Go)
