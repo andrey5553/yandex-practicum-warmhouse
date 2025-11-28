@@ -79,8 +79,12 @@
 [Containers](schemas/to-be/containers.puml)
 
 **Диаграмма компонентов (Components)**
-- [Authentification Service](schemas/auth_component.puml)
-- [Devices Service](schemas/auth_component.puml)
+- [Api gateway](schemas/to-be/api_gateway_component.puml)
+- [Authentification Service](schemas/to-be/auth_component.puml)
+- [Home Service](schemas/to-be/home_service_component.puml)
+- [Devices Service](schemas/to-be/device_service_component.puml)
+- [Telemetry Service](schemas/to-be/telemetry_service_component.puml)
+- [Notification Service](schemas/to-be/notification_service_component.puml)
 
 **Диаграмма кода (Code)**
 
