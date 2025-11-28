@@ -117,9 +117,9 @@
 
 ## 2. Документация API
 
-[Auth Service](openapi/auth_service_openapi.yaml)
-[Devices Service](openapi/device_service_openapi.yaml)
-[Telemetry Service](openapi/telemetry_service_openapi.yaml)
+- [Auth Service](openapi/auth_service_openapi.yaml)
+- [Devices Service](openapi/device_service_openapi.yaml)
+- [Telemetry Service](openapi/telemetry_service_openapi.yaml)
 
 # Задание 5. Работа с docker и docker-compose
 
