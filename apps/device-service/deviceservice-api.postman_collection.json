@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "Device Service API",
+    "description": "Микросервис для управления IoT устройствами",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Get All Devices",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/api/v1/devices",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "v1", "devices"]
+        }
+      }
+    },
+    {
+      "name": "Create Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Умная розетка кухня\",\n    \"type\": \"socket\",\n    \"device_type_id\": 2,\n    \"room_id\": 2,\n    \"serial_number\": \"SOCKET-001\",\n    \"configuration\": {\n        \"power_limit\": 2000,\n        \"auto_off\": true\n    }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8083/api/v1/devices",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "v1", "devices"]
+        }
+      }
+    },
+    {
+      "name": "Get Device by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/api/v1/devices/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "v1", "devices", "1"]
+        }
+      }
+    },
+    {
+      "name": "Update Device",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Умная лампа гостиная (обновленная)\",\n    \"configuration\": {\n        \"brightness\": 100,\n        \"color\": \"warm\"\n    }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8083/api/v1/devices/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "v1", "devices", "1"]
+        }
+      }
+    },
+    {
+      "name": "Send Command to Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"command\": \"turn_on\",\n    \"parameters\": {\n        \"brightness\": 75,\n        \"color\": \"cool_white\"\n    },\n    \"priority\": \"normal\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8083/api/v1/devices/1/commands",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "v1", "devices", "1", "commands"]
+        }
+      }
+    },
+    {
+      "name": "Get Device State",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/api/v1/devices/1/state",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "v1", "devices", "1", "state"]
+        }
+      }
+    }
+  ]
+}

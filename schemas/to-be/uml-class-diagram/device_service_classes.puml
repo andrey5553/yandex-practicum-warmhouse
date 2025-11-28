@@ -1,0 +1,78 @@
+@startuml
+title Device Service - Актуальные классы
+
+class DeviceManager {
+  - deviceRepository: IDeviceRepository
+  - protocolHandler: IProtocolHandler
+  + getAllDevices(): List<Device>
+  + createDevice(deviceData): Device
+  + sendCommand(deviceId, command): CommandResult
+  + updateDeviceStatus(deviceId, status): void
+}
+
+class Device {
+  - id: Integer
+  - name: String
+  - type: String
+  - device_type_id: Integer
+  - room_id: Integer
+  - serial_number: String
+  - status: String
+  - configuration: JSON
+  - last_seen: DateTime
+  - is_active: Boolean
+  + validateConfiguration(): boolean
+}
+
+class DeviceCommand {
+  - id: Integer
+  - device_id: Integer
+  - command_type: String
+  - payload: JSON
+  - status: String
+  - created_at: DateTime
+}
+
+class IDeviceRepository {
+  <<interface>>
+  + findById(id): Device
+  + findAll(): List<Device>
+  + save(device): Device
+  + findByRoom(roomId): List<Device>
+  + updateStatus(deviceId, status): void
+}
+
+class ProtocolHandler {
+  - mqttHandler: MQTTHandler
+  - httpHandler: HTTPHandler
+  + sendCommand(device, command): boolean
+  + handleTelemetry(data): void
+}
+
+class MQTTHandler {
+  - client: IMQTTClient
+  + connect(): void
+  + publish(topic, message): void
+  + subscribe(topic, callback): void
+}
+
+DeviceManager --> IDeviceRepository
+DeviceManager --> ProtocolHandler
+DeviceManager --> Device
+DeviceManager --> DeviceCommand
+ProtocolHandler --> MQTTHandler
+Device --> DeviceCommand
+
+note right of DeviceManager
+  **Соответствует API:**
+  GET/POST /devices
+  POST /devices/{id}/commands
+end note
+
+note left of Device
+  **Модель из Python:**
+  id, name, type, room_id,
+  serial_number, status,
+  configuration, last_seen
+end note
+@enduml
