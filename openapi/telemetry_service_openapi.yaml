@@ -1,0 +1,144 @@
+openapi: 3.0.0
+info:
+  title: Telemetry Service API
+  version: 1.0.0
+  description: API для работы с телеметрией устройств
+
+paths:
+  /telemetry:
+    post:
+      summary: Отправить данные телеметрии
+      description: Используется устройствами для отправки метрик
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryData'
+      responses:
+        '202':
+          description: Данные приняты
+
+  /telemetry/devices/{deviceId}:
+    get:
+      summary: Получить телеметрию устройства
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: metric
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: aggregation
+          in: query
+          schema:
+            type: string
+            enum: [raw, hour, day, week]
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_id:
+                    type: integer
+                  metrics:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TelemetryPoint'
+
+  /telemetry/houses/{houseId}/aggregated:
+    get:
+      summary: Получить агрегированную телеметрию по дому
+      parameters:
+        - name: houseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [today, yesterday, week, month]
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregatedTelemetry'
+
+components:
+  schemas:
+    TelemetryData:
+      type: object
+      required:
+        - device_id
+        - metrics
+      properties:
+        device_id:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metric'
+
+    Metric:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+
+    TelemetryPoint:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        value:
+          type: number
+        unit:
+          type: string
+
+    AggregatedTelemetry:
+      type: object
+      properties:
+        house_id:
+          type: integer
+        period:
+          type: string
+        total_energy_consumption:
+          type: number
+        average_temperature:
+          type: number
+        device_count:
+          type: integer
+        metrics:
+          type: object

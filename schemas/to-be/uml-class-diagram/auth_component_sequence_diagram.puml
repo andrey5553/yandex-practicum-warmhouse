@@ -1,0 +1,28 @@
+@startuml
+title Auth Service - Процесс аутентификации
+
+actor User
+participant "API Gateway" as Gateway
+participant AuthController
+participant JWTService
+participant UserRepository
+participant RedisCache
+
+User -> Gateway: POST /auth/login\n{email, password}
+Gateway -> AuthController: login(credentials)
+AuthController -> UserRepository: findByEmail(email)
+UserRepository --> AuthController: user
+AuthController -> JWTService: validatePassword(hash, password)
+JWTService --> AuthController: true/false
+
+alt Valid credentials
+  AuthController -> JWTService: generateTokens(user)
+  JWTService --> AuthController: {accessToken, refreshToken}
+  AuthController -> RedisCache: storeSession(userId, tokens)
+  AuthController --> Gateway: 200 OK + tokens
+  Gateway --> User: Success
+else Invalid credentials
+  AuthController --> Gateway: 401 Unauthorized
+  Gateway --> User: Error
+end
+@enduml

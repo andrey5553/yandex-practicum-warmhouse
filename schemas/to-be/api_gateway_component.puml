@@ -1,0 +1,61 @@
+@startuml
+!include <C4/C4_Component>
+
+title Контейнер API Gateway - Детальная архитектура
+
+Person(user, "User", "Пользователь, зарегистрированный в системе")
+
+Container(api_gateway, "API Gateway", "Kong/Nginx", "Единая точка входа, маршрутизация, rate limiting")
+
+' === ВНУТРЕННИЕ КОМПОНЕНТЫ API GATEWAY ===
+Component(router, "Router", "Kong Router", "Маршрутизация запросов по путям")
+Component(auth_plugin, "Auth Plugin", "JWT Plugin", "Проверка JWT токенов")
+Component(rate_limiter, "Rate Limiter", "Rate Limiting Plugin", "Ограничение частоты запросов")
+Component(cache_plugin, "Cache Plugin", "Proxy Cache", "Кэширование ответов")
+Component(log_plugin, "Logging Plugin", "File/HTTP Log", "Логирование запросов")
+Component(load_balancer, "Load Balancer", "Upstream Balancer", "Балансировка нагрузки")
+
+' === ВНЕШНИЕ СЕРВИСЫ ===
+System_Boundary(backend, "Backend Services") {
+    Container(auth_service, "Auth Service", "Python/FastAPI", "Аутентификация пользователей")
+    Container(device_service, "Device Service", "Python/FastAPI", "Управление устройствами")
+    Container(home_service, "Home Service", "Python/FastAPI", "Управление домами")
+    Container(telemetry_service, "Telemetry Service", "Python/FastAPI", "Сбор телеметрии")
+    Container(notification_service, "Notification Service", "Python/FastAPI", "Управление уведомлениями")
+}
+
+' === ВНЕШНИЕ КЛИЕНТЫ ===
+System_Boundary(clients, "Clients") {
+    Container(spa, "Web Application", "React", "SPA клиент")
+    Container(mobile_app, "Mobile App", "React Native", "Мобильный клиент")
+}
+
+Rel(user, clients, Пользовательский запрос , "HTTPS")
+
+' === ВЗАИМОДЕЙСТВИЯ КЛИЕНТОВ ===
+Rel(spa, api_gateway, "HTTPS запросы", "REST/GraphQL")
+Rel(mobile_app, api_gateway, "HTTPS запросы", "REST/GraphQL")
+
+' === ВНУТРЕННИЕ СВЯЗИ API GATEWAY ===
+Rel(api_gateway, router, "Перенаправление запросов", "internal")
+Rel(router, auth_plugin, "Проверка авторизации", "internal")
+Rel(auth_plugin, rate_limiter, "Проверка лимитов", "internal")
+Rel(rate_limiter, cache_plugin, "Проверка кэша", "internal")
+Rel(cache_plugin, load_balancer, "Балансировка", "internal")
+Rel(load_balancer, log_plugin, "Логирование", "internal")
+
+' === МАРШРУТИЗАЦИЯ НА СЕРВИСЫ ===
+Rel(load_balancer, auth_service, "/api/auth/**", "HTTP/JWT")
+Rel(load_balancer, device_service, "/api/devices/**", "HTTP/JWT")
+Rel(load_balancer, home_service, "/api/homes/**", "HTTP/JWT")
+Rel(load_balancer, telemetry_service, "/api/telemetry/**", "HTTP/JWT")
+Rel(load_balancer, notification_service, "/api/notifications/**", "HTTP/JWT")
+
+' === ИНТЕГРАЦИИ С ИНФРАСТРУКТУРОЙ ===
+ContainerDb(redis_cache, "Redis Cache", "Redis", "Кэширование сессий")
+ContainerDb(kong_db, "Kong Database", "PostgreSQL", "Конфигурация плагинов")
+
+Rel(api_gateway, redis_cache, "Кэширование токенов", "Redis Protocol")
+Rel(api_gateway, kong_db, "Чтение конфигурации", "SQL")
+
+@enduml

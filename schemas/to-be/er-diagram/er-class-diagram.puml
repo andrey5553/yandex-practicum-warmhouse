@@ -1,0 +1,47 @@
+@startuml
+entity Device {
+  * id : INTEGER
+  * name : VARCHAR
+  * type : VARCHAR
+  # room_id : INTEGER
+  * serial_number : VARCHAR
+  status : VARCHAR
+  configuration : JSON
+  last_seen : TIMESTAMP
+  created_at : TIMESTAMP
+  is_active : BOOLEAN
+}
+
+entity TelemetryData {
+  * id : INTEGER
+  # device_id : INTEGER
+  timestamp : TIMESTAMP
+  metrics : JSON
+}
+
+entity TelemetryAggregation {
+  * id : INTEGER
+  # house_id : INTEGER
+  period : VARCHAR
+  total_energy_consumption : DECIMAL
+  average_temperature : DECIMAL
+  device_count : INTEGER
+  metrics : JSON
+}
+
+entity Sensor {
+  * id : INTEGER
+  name : VARCHAR
+  type : VARCHAR
+  location : VARCHAR
+  value : DECIMAL
+  unit : VARCHAR
+  status : VARCHAR
+  last_updated : TIMESTAMP
+  created_at : TIMESTAMP
+}
+
+Device ||--o| TelemetryData
+Device ||--|| Sensor
+
+@enduml

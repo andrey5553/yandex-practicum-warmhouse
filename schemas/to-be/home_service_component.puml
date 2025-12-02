@@ -1,0 +1,79 @@
+@startuml
+!include <C4/C4_Component>
+
+title Smart Home Service - Монолитная архитектура
+
+Container(smart_home_service, "Smart Home Service", "Python/FastAPI", "Монолитное приложение: устройства + телеметрия + дома")
+
+' === ОСНОВНЫЕ КОМПОНЕНТЫ API ===
+Component(api_gateway, "API Gateway", "FastAPI Router", "Единая точка входа для всех API")
+Component(device_controller, "Device Controller", "FastAPI", "Управление устройствами\n• GET/POST /devices\n• POST /devices/{id}/commands")
+Component(telemetry_controller, "Telemetry Controller", "FastAPI", "Телеметрия\n• POST /telemetry\n• GET /telemetry/devices/{id}")
+Component(home_controller, "Home Controller", "FastAPI", "Управление домами\n• Дома, помещения, геолокации")
+
+' === БИЗНЕС-ЛОГИКА ===
+Component(device_service, "Device Service", "Business Logic", "Логика устройств и команд")
+Component(telemetry_service, "Telemetry Service", "Business Logic", "Обработка телеметрии")
+Component(home_service, "Home Service", "Business Logic", "Логика домов и помещений")
+
+' === ИНТЕГРАЦИЯ ===
+Component(mqtt_handler, "MQTT Handler", "Paho-MQTT", "Общение с устройствами")
+
+' === ХРАНИЛИЩА ДАННЫХ ===
+ContainerDb(main_db, "Main Database", "PostgreSQL", "Устройства, дома, телеметрия, пользователи")
+Container(redis_cache, "Redis Cache", "Redis", "Состояние устройств, кэш")
+Container(file_storage, "File Storage", "MinIO/S3", "Конфигурации, файлы")
+
+' === ВНЕШНИЕ СИСТЕМЫ ===
+System_Ext(iot_devices, "IoT Devices", "MQTT/HTTP", "Умные устройства и датчики")
+System_Ext(map_provider, "Map Provider", "API", "Геокодирование")
+
+' === ОСНОВНЫЕ ВЗАИМОДЕЙСТВИЯ ===
+
+' API маршрутизация
+Rel(api_gateway, device_controller, "Запросы устройств", "internal")
+Rel(api_gateway, telemetry_controller, "Запросы телеметрии", "internal")
+Rel(api_gateway, home_controller, "Запросы домов", "internal")
+
+' Бизнес-логика
+Rel(device_controller, device_service, "Команды устройствам", "internal")
+Rel(telemetry_controller, telemetry_service, "Данные телеметрии", "internal")
+Rel(home_controller, home_service, "Управление домами", "internal")
+
+' Интеграция между сервисами
+Rel(device_service, telemetry_service, "События устройств", "internal")
+Rel(home_service, device_service, "Привязка к помещениям", "internal")
+Rel(telemetry_service, device_service, "Обновление состояния", "internal")
+
+' Взаимодействие с устройствами
+Rel(device_service, mqtt_handler, "Отправка команд", "internal")
+Rel(mqtt_handler, iot_devices, "MQTT команды", "MQTT")
+Rel(iot_devices, mqtt_handler, "Телеметрия", "MQTT")
+Rel(mqtt_handler, telemetry_service, "Получение данных", "internal")
+
+' Работа с данными
+Rel(device_service, main_db, "Данные устройств", "SQL")
+Rel(telemetry_service, main_db, "Метрики телеметрии", "SQL")
+Rel(home_service, main_db, "Данные домов", "SQL")
+Rel(device_service, redis_cache, "Состояние устройств", "Redis")
+Rel(home_service, redis_cache, "Кэш геоданных", "Redis")
+Rel(device_service, file_storage, "Конфигурации", "S3 API")
+
+' Внешние сервисы
+Rel(home_service, map_provider, "Геокодирование", "API")
+
+note right of smart_home_service
+  <b>Основные API группы:</b>
+  • /api/v1/devices - устройства
+  • /api/v1/telemetry - телеметрия  
+  • /api/v1/homes - дома и помещения
+end note
+
+note left of mqtt_handler
+  <b>MQTT топики:</b>
+  • devices/{id}/commands
+  • devices/{id}/telemetry
+  • homes/{id}/events
+end note
+
+@enduml
